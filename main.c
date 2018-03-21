@@ -38,6 +38,7 @@
 #include "et_stm32f_arm_kit_lcd.h"
 #include <string.h>
 #define Mint 0x1FF8
+#define Rose 0xF820
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -95,14 +96,10 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
 	LCD_Setup();
-	//LCD_DrawRect(100, 100, 20, 100);  //(x,y,yhigh,xwidth)
-	
-	
 	uint16_t posX, posY;
 	char pos[50];
-	Menu();
-	
-	
+	//Menu();
+		Menu();
 	
 	
   /* USER CODE END 2 */
@@ -358,41 +355,63 @@ void Menu(void){
 	LCD_DisplayStringLine(Line7, "           ");
 	LCD_DisplayStringLine(Line8, "           ");
 	LCD_DisplayStringLine(Line9, "           ");
-	//temp
-	int y = 200;
+	
+	
+
+	LCD_SetTextColor(Grey);
+	for(int i=0;i<5;i++){
+	LCD_DrawRect(24+i, 210+i, 24, 60);
+	LCD_DrawRect(72+i, 205+i, 24, 75);
+	LCD_DrawRect(120+i, 205+i, 24, 75);
+	LCD_DrawCircle(191+i, 241+i, 30);	
+	}
+	
 	LCD_SetBackColor(Mint);
 	LCD_SetTextColor(Black);
-	LCD_DisplayChar(Line2, y, 'T');
-	y = y+15;
-	LCD_DisplayChar(Line2, y , 'E');
-	y = y+15;
-	LCD_DisplayChar(Line2, y , 'M');
-	y = y+15;
-	LCD_DisplayChar(Line2, y , 'P');
-	//Speed
-	y = 200;
-	LCD_DisplayChar(Line4, y, 'S');
-	y = y+15;
-	LCD_DisplayChar(Line4, y , 'P');
-	y = y+15;
-	LCD_DisplayChar(Line4, y , 'E');
-	y = y+15;
-	LCD_DisplayChar(Line4, y , 'E');
-	y = y+15;
-	LCD_DisplayChar(Line4, y , 'D');
-	//Graph
-	y = 200;
-	LCD_DisplayChar(Line6, y, 'G');
-	y = y+15;
-	LCD_DisplayChar(Line6, y , 'R');
-	y = y+15;
-	LCD_DisplayChar(Line6, y , 'A');
-	y = y+15;
-	LCD_DisplayChar(Line6, y , 'P');
-	y = y+15;
-	LCD_DisplayChar(Line6, y , 'H');
+	int y=210;
+	LCD_DisplayChar(Line1, y, 'T');
+	y+=15;
+	LCD_DisplayChar(Line1, y, 'E');
+	y+=15;
+	LCD_DisplayChar(Line1, y, 'M');
+	y+=15;
+	LCD_DisplayChar(Line1, y, 'P');
 	
+	y=205;
+	LCD_DisplayChar(Line3, y, 'S');
+	y+=15;
+	LCD_DisplayChar(Line3, y, 'P');
+	y+=15;
+	LCD_DisplayChar(Line3, y, 'E');
+	y+=15;
+	LCD_DisplayChar(Line3, y, 'E');
+	y+=15;
+	LCD_DisplayChar(Line3, y, 'D');
+	
+	y=205;	
+	LCD_DisplayChar(Line5, y, 'G');
+	y+=15;	
+	LCD_DisplayChar(Line5, y, 'R');
+	y+=15;
+	LCD_DisplayChar(Line5, y, 'A');
+	y+=15;	
+	LCD_DisplayChar(Line5, y, 'P');
+	y+=15;
+	LCD_DisplayChar(Line5, y, 'H');
+	
+	LCD_SetTextColor(Rose);
+	for(int i=1;i<30;i++){
+	LCD_DrawCircle(190, 240, i);
+	}
+	LCD_SetTextColor(Black);
+	for(int i=15;i<20;i++){
+	LCD_DrawCircle(190, 240, i);
+	}
+	for(int i=238;i<243;i++){		
+		LCD_DrawLine(165, i, 25, Vertical);		
+	}
 }
+
 /* USER CODE END 4 */
 
 /**
