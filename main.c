@@ -66,6 +66,10 @@ static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
 void Menu(void);
+void buttemp(uint16_t posX,uint16_t posY);
+void butspeed(uint16_t posX,uint16_t posY);
+void butgraph(uint16_t posX,uint16_t posY);
+void butpower(uint16_t posX,uint16_t posY);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -99,9 +103,7 @@ int main(void)
 	uint16_t posX, posY;
 	char pos[50];
 	//Menu();
-		Menu();
-	
-	
+		Menu();	
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -112,13 +114,12 @@ int main(void)
 	posX = TCS_Read_X();
 	posY = TCS_Read_Y();
 	sprintf(pos, "X = %d Y = %d\r\n", posX, posY); 
-	while(__HAL_UART_GET_FLAG(&huart2,UART_FLAG_TC)==RESET){}
-	HAL_UART_Transmit(&huart2, (uint8_t*) pos, strlen(pos), 500); 
-	HAL_Delay(100);
-	//if(posX > 100 && posX < 200 && posY > 100 && posY < 200)
-	//{
-	//	LCD_Clear(Blue2);
-	//}
+	//while(__HAL_UART_GET_FLAG(&huart2,UART_FLAG_TC)==RESET){}
+	//HAL_UART_Transmit(&huart2, (uint8_t*) pos, strlen(pos), 500); 		
+	buttemp(posX,posY);
+	butspeed(posX,posY);
+	butgraph(posX,posY);	
+	butpower(posX,posY);
   /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -342,7 +343,7 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 void Menu(void){
-		LCD_Clear(Black);
+	LCD_Clear(Black);
 	LCD_SetBackColor(Mint);
 	LCD_SetTextColor(Mint);
 	LCD_DisplayStringLine(Line0, "           ");
@@ -355,14 +356,21 @@ void Menu(void){
 	LCD_DisplayStringLine(Line7, "           ");
 	LCD_DisplayStringLine(Line8, "           ");
 	LCD_DisplayStringLine(Line9, "           ");
-	
-	
 
 	LCD_SetTextColor(Grey);
 	for(int i=0;i<5;i++){
-	LCD_DrawRect(24+i, 210+i, 24, 60);
-	LCD_DrawRect(72+i, 205+i, 24, 75);
-	LCD_DrawRect(120+i, 205+i, 24, 75);
+		//shadowtemp
+	LCD_DrawLine(28-i, 276-i, 25, Vertical);
+	LCD_DrawLine(48+i, 210+i, 62, Horizontal);
+		//shadowspeed
+	LCD_DrawLine(76-i, 285-i, 25, Vertical);
+	LCD_DrawLine(96+i, 205+i, 76, Horizontal);
+		//shadowgraph
+	LCD_DrawLine(124-i, 286-i, 25, Vertical);
+	LCD_DrawLine(144+i, 205+i, 77, Horizontal);
+	}
+	
+	for(int i=0;i<5;i++){
 	LCD_DrawCircle(191+i, 241+i, 30);	
 	}
 	
@@ -374,7 +382,7 @@ void Menu(void){
 	LCD_DisplayChar(Line1, y, 'E');
 	y+=15;
 	LCD_DisplayChar(Line1, y, 'M');
-	y+=15;
+	y+=16;
 	LCD_DisplayChar(Line1, y, 'P');
 	
 	y=205;
@@ -390,7 +398,7 @@ void Menu(void){
 	
 	y=205;	
 	LCD_DisplayChar(Line5, y, 'G');
-	y+=15;	
+	y+=16;	
 	LCD_DisplayChar(Line5, y, 'R');
 	y+=15;
 	LCD_DisplayChar(Line5, y, 'A');
@@ -412,6 +420,203 @@ void Menu(void){
 	}
 }
 
+
+void buttemp(uint16_t posX,uint16_t posY){
+	int y=210;
+	if(posX > 200 && posX < 260 && posY > 186 && posY < 210)
+	{
+		//clear
+		LCD_SetTextColor(Black);
+		for(int i=1;i<5;i++){
+			LCD_DrawLine(48+i, 210+i, 62, Horizontal); //(y,x)
+		}
+		for(int i=0;i<4;i++){
+			LCD_DrawLine(28-i, 276-i, 25, Vertical);   //(y,x)
+		}	
+		//shadow	
+		LCD_SetTextColor(Grey);
+			for(int i=0;i<5;i++){
+			LCD_DrawLine(23-i, 209-i, 25, Vertical);
+			LCD_DrawLine(19+i, 206+i, 62, Horizontal);
+		}
+			
+		LCD_SetBackColor(Black);
+		LCD_SetTextColor(Mint);	
+		LCD_DisplayChar(Line1, y, 'T');
+		y+=15;
+		LCD_DisplayChar(Line1, y, 'E');
+		y+=15;
+		LCD_DisplayChar(Line1, y, 'M');
+		y+=16;
+		LCD_DisplayChar(Line1, y, 'P');
+	}
+	else{
+			LCD_SetTextColor(Black);
+			for(int i=0;i<5;i++){
+				LCD_DrawLine(23-i, 209-i, 25, Vertical);
+				LCD_DrawLine(19+i, 206+i, 62, Horizontal);
+			}
+			
+			LCD_SetTextColor(Grey);
+			for(int i=0;i<5;i++){
+				LCD_DrawLine(28-i, 276-i, 25, Vertical);
+				LCD_DrawLine(48+i, 210+i, 62, Horizontal);
+			}
+			
+			LCD_SetBackColor(Mint);
+			LCD_SetTextColor(Black);
+			int y=210;
+			LCD_DisplayChar(Line1, y, 'T');
+			y+=15;
+			LCD_DisplayChar(Line1, y, 'E');
+			y+=15;
+			LCD_DisplayChar(Line1, y, 'M');
+			y+=16;
+			LCD_DisplayChar(Line1, y, 'P');
+	}
+}
+
+
+
+
+
+
+
+void butspeed(uint16_t posX,uint16_t posY){
+	int y=205;
+	if(posX > 193 && posX < 265 && posY > 140 && posY < 162)
+	{
+		//clear
+		LCD_SetTextColor(Black);
+		for(int i=0;i<4;i++){
+			LCD_DrawLine(76-i, 285-i, 25, Vertical);   //(y,x)
+		}
+		for(int i=1;i<5;i++){
+			LCD_DrawLine(96+i, 205+i, 76, Horizontal); //(y,x)
+		}
+		
+		//shadow
+		LCD_SetTextColor(Grey);
+		for(int i=0;i<5;i++){
+			LCD_DrawLine(71-i, 204-i, 25, Vertical);
+			LCD_DrawLine(67+i, 201+i, 76, Horizontal);
+		}			
+		LCD_SetBackColor(Black);
+		LCD_SetTextColor(Mint);
+		LCD_DisplayChar(Line3, y, 'S');
+		y+=15;
+		LCD_DisplayChar(Line3, y, 'P');
+		y+=15;
+		LCD_DisplayChar(Line3, y, 'E');
+		y+=15;
+		LCD_DisplayChar(Line3, y, 'E');
+		y+=15;
+		LCD_DisplayChar(Line3, y, 'D');
+	}else{
+		//clear
+		LCD_SetTextColor(Black);
+			for(int i=0;i<5;i++){
+			LCD_DrawLine(71-i, 204-i, 25, Vertical);
+			LCD_DrawLine(67+i, 201+i, 76, Horizontal);
+		}
+		//shadow	
+		LCD_SetTextColor(Grey);
+		for(int i=0;i<5;i++){
+			//shadowspeed
+		LCD_DrawLine(76-i, 285-i, 25, Vertical);
+		LCD_DrawLine(96+i, 205+i, 76, Horizontal);
+		}	
+		
+		LCD_SetBackColor(Mint);
+		LCD_SetTextColor(Black);
+		LCD_DisplayChar(Line3, y, 'S');
+		y+=15;
+		LCD_DisplayChar(Line3, y, 'P');
+		y+=15;
+		LCD_DisplayChar(Line3, y, 'E');
+		y+=15;
+		LCD_DisplayChar(Line3, y, 'E');
+		y+=15;
+		LCD_DisplayChar(Line3, y, 'D');
+	}
+}
+
+
+void butgraph(uint16_t posX,uint16_t posY){
+	int y=205;
+	if(posX > 193 && posX < 265 && posY > 98 && posY < 122)
+	{
+		//clear
+		LCD_SetTextColor(Black);
+		for(int i=0;i<4;i++){
+			LCD_DrawLine(124-i, 286-i, 25, Vertical);
+		}
+		for(int i=1;i<5;i++){
+			LCD_DrawLine(144+i, 205+i, 77, Horizontal);
+		}
+		
+		//shadow
+		LCD_SetTextColor(Grey);
+		for(int i=0;i<5;i++){
+			LCD_DrawLine(119-i, 204-i, 25, Vertical);
+			LCD_DrawLine(115+i, 201+i, 77, Horizontal);
+		}		
+		LCD_SetBackColor(Black);
+		LCD_SetTextColor(Mint);
+		LCD_DisplayChar(Line5, y, 'G');
+		y+=16;	
+		LCD_DisplayChar(Line5, y, 'R');
+		y+=15;
+		LCD_DisplayChar(Line5, y, 'A');
+		y+=15;	
+		LCD_DisplayChar(Line5, y, 'P');
+		y+=15;
+		LCD_DisplayChar(Line5, y, 'H');
+	}else{
+		//clear
+		LCD_SetTextColor(Black);
+		for(int i=0;i<5;i++){
+			LCD_DrawLine(119-i, 204-i, 25, Vertical);
+			LCD_DrawLine(115+i, 201+i, 77, Horizontal);
+		}
+		//shadow
+		LCD_SetTextColor(Grey);
+		for(int i=0;i<5;i++){
+			LCD_DrawLine(124-i, 286-i, 25, Vertical);
+			LCD_DrawLine(144+i, 205+i, 77, Horizontal);
+		}
+		
+		LCD_SetBackColor(Mint);
+		LCD_SetTextColor(Black);
+		LCD_DisplayChar(Line5, y, 'G');
+		y+=16;	
+		LCD_DisplayChar(Line5, y, 'R');
+		y+=15;
+		LCD_DisplayChar(Line5, y, 'A');
+		y+=15;	
+		LCD_DisplayChar(Line5, y, 'P');
+		y+=15;
+		LCD_DisplayChar(Line5, y, 'H');
+	}
+}
+
+void butpower(uint16_t posX,uint16_t posY){
+	if(posX > 205 && posX < 250 && posY > 28 && posY < 76)
+	{
+		
+		LCD_SetTextColor(Black);
+		for(int i=1;i<30;i++){
+			LCD_DrawCircle(190, 240, i);
+		}
+		LCD_SetTextColor(Rose);
+		for(int i=15;i<20;i++){
+			LCD_DrawCircle(190, 240, i);
+		}
+		for(int i=238;i<243;i++){		
+			LCD_DrawLine(165, i, 25, Vertical);		
+		}
+	}
+}
 /* USER CODE END 4 */
 
 /**
