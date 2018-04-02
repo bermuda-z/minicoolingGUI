@@ -121,21 +121,21 @@ int main(void)
 	//HAL_UART_Transmit(&huart2, (uint8_t*) pos, strlen(pos), 500); 
 	if(posX > 200 && posX < 260 && posY > 186 && posY < 210)
 	{
-		buttemppress(posX,posY);
 		butspeedrelease(posX,posY);
 		butgraphrelease(posX,posY);
+		buttemppress(posX,posY);
 	}
 	if(posX > 193 && posX < 265 && posY > 140 && posY < 162)
 	{
-		butspeedpress(posX,posY);
 		buttemprelease(posX,posY);
 		butgraphrelease(posX,posY);
+		butspeedpress(posX,posY);	
 	}
 	if(posX > 193 && posX < 265 && posY > 98 && posY < 122)
 	{
-		butgraphpress(posX,posY);
 		buttemprelease(posX,posY);
 		butspeedrelease(posX,posY);
+		butgraphpress(posX,posY);
 	}
 	if(posX > 205 && posX < 250 && posY > 28 && posY < 76)
 	{		
