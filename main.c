@@ -66,9 +66,12 @@ static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
 void Menu(void);
-void buttemp(uint16_t posX,uint16_t posY);
-void butspeed(uint16_t posX,uint16_t posY);
-void butgraph(uint16_t posX,uint16_t posY);
+void buttemppress(uint16_t posX,uint16_t posY);
+void buttemprelease(uint16_t posX,uint16_t posY);
+void butspeedpress(uint16_t posX,uint16_t posY);
+void butspeedrelease(uint16_t posX,uint16_t posY);
+void butgraphpress(uint16_t posX,uint16_t posY);
+void butgraphrelease(uint16_t posX,uint16_t posY);
 void butpower(uint16_t posX,uint16_t posY);
 /* USER CODE END PFP */
 
@@ -115,17 +118,33 @@ int main(void)
 	posY = TCS_Read_Y();
 	sprintf(pos, "X = %d Y = %d\r\n", posX, posY); 
 	//while(__HAL_UART_GET_FLAG(&huart2,UART_FLAG_TC)==RESET){}
-	//HAL_UART_Transmit(&huart2, (uint8_t*) pos, strlen(pos), 500); 		
-	buttemp(posX,posY);
-	butspeed(posX,posY);
-	butgraph(posX,posY);	
-	butpower(posX,posY);
+	//HAL_UART_Transmit(&huart2, (uint8_t*) pos, strlen(pos), 500); 
+	if(posX > 200 && posX < 260 && posY > 186 && posY < 210)
+	{
+		buttemppress(posX,posY);
+		butspeedrelease(posX,posY);
+		butgraphrelease(posX,posY);
+	}
+	if(posX > 193 && posX < 265 && posY > 140 && posY < 162)
+	{
+		butspeedpress(posX,posY);
+		buttemprelease(posX,posY);
+		butgraphrelease(posX,posY);
+	}
+	if(posX > 193 && posX < 265 && posY > 98 && posY < 122)
+	{
+		butgraphpress(posX,posY);
+		buttemprelease(posX,posY);
+		butspeedrelease(posX,posY);
+	}
+	if(posX > 205 && posX < 250 && posY > 28 && posY < 76)
+	{		
+		butpower(posX,posY);
+	}	
   /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
-
 }
-
 /** System Clock Configuration
 */
 void SystemClock_Config(void)
@@ -421,10 +440,8 @@ void Menu(void){
 }
 
 
-void buttemp(uint16_t posX,uint16_t posY){
-	int y=210;
-	if(posX > 200 && posX < 260 && posY > 186 && posY < 210)
-	{
+void buttemppress(uint16_t posX,uint16_t posY){
+
 		//clear
 		LCD_SetTextColor(Black);
 		for(int i=1;i<5;i++){
@@ -441,7 +458,8 @@ void buttemp(uint16_t posX,uint16_t posY){
 		}
 			
 		LCD_SetBackColor(Black);
-		LCD_SetTextColor(Mint);	
+		LCD_SetTextColor(Mint);
+		int y=210;
 		LCD_DisplayChar(Line1, y, 'T');
 		y+=15;
 		LCD_DisplayChar(Line1, y, 'E');
@@ -449,8 +467,12 @@ void buttemp(uint16_t posX,uint16_t posY){
 		LCD_DisplayChar(Line1, y, 'M');
 		y+=16;
 		LCD_DisplayChar(Line1, y, 'P');
-	}
-	else{
+			
+
+}
+
+void buttemprelease(uint16_t posX,uint16_t posY){
+	
 			LCD_SetTextColor(Black);
 			for(int i=0;i<5;i++){
 				LCD_DrawLine(23-i, 209-i, 25, Vertical);
@@ -473,19 +495,14 @@ void buttemp(uint16_t posX,uint16_t posY){
 			LCD_DisplayChar(Line1, y, 'M');
 			y+=16;
 			LCD_DisplayChar(Line1, y, 'P');
-	}
+	
 }
 
 
 
 
 
-
-
-void butspeed(uint16_t posX,uint16_t posY){
-	int y=205;
-	if(posX > 193 && posX < 265 && posY > 140 && posY < 162)
-	{
+void butspeedpress(uint16_t posX,uint16_t posY){
 		//clear
 		LCD_SetTextColor(Black);
 		for(int i=0;i<4;i++){
@@ -503,6 +520,7 @@ void butspeed(uint16_t posX,uint16_t posY){
 		}			
 		LCD_SetBackColor(Black);
 		LCD_SetTextColor(Mint);
+		int y=205;
 		LCD_DisplayChar(Line3, y, 'S');
 		y+=15;
 		LCD_DisplayChar(Line3, y, 'P');
@@ -512,8 +530,10 @@ void butspeed(uint16_t posX,uint16_t posY){
 		LCD_DisplayChar(Line3, y, 'E');
 		y+=15;
 		LCD_DisplayChar(Line3, y, 'D');
-	}else{
-		//clear
+	
+}
+void butspeedrelease(uint16_t posX,uint16_t posY){
+	 //clear
 		LCD_SetTextColor(Black);
 			for(int i=0;i<5;i++){
 			LCD_DrawLine(71-i, 204-i, 25, Vertical);
@@ -529,6 +549,7 @@ void butspeed(uint16_t posX,uint16_t posY){
 		
 		LCD_SetBackColor(Mint);
 		LCD_SetTextColor(Black);
+		int y=205;
 		LCD_DisplayChar(Line3, y, 'S');
 		y+=15;
 		LCD_DisplayChar(Line3, y, 'P');
@@ -538,14 +559,10 @@ void butspeed(uint16_t posX,uint16_t posY){
 		LCD_DisplayChar(Line3, y, 'E');
 		y+=15;
 		LCD_DisplayChar(Line3, y, 'D');
-	}
 }
 
-
-void butgraph(uint16_t posX,uint16_t posY){
-	int y=205;
-	if(posX > 193 && posX < 265 && posY > 98 && posY < 122)
-	{
+void butgraphpress(uint16_t posX,uint16_t posY){
+	
 		//clear
 		LCD_SetTextColor(Black);
 		for(int i=0;i<4;i++){
@@ -563,6 +580,7 @@ void butgraph(uint16_t posX,uint16_t posY){
 		}		
 		LCD_SetBackColor(Black);
 		LCD_SetTextColor(Mint);
+		int y=205;
 		LCD_DisplayChar(Line5, y, 'G');
 		y+=16;	
 		LCD_DisplayChar(Line5, y, 'R');
@@ -572,8 +590,9 @@ void butgraph(uint16_t posX,uint16_t posY){
 		LCD_DisplayChar(Line5, y, 'P');
 		y+=15;
 		LCD_DisplayChar(Line5, y, 'H');
-	}else{
-		//clear
+}
+void butgraphrelease(uint16_t posX,uint16_t posY){
+	//clear
 		LCD_SetTextColor(Black);
 		for(int i=0;i<5;i++){
 			LCD_DrawLine(119-i, 204-i, 25, Vertical);
@@ -588,6 +607,7 @@ void butgraph(uint16_t posX,uint16_t posY){
 		
 		LCD_SetBackColor(Mint);
 		LCD_SetTextColor(Black);
+		int y=205;
 		LCD_DisplayChar(Line5, y, 'G');
 		y+=16;	
 		LCD_DisplayChar(Line5, y, 'R');
@@ -597,9 +617,7 @@ void butgraph(uint16_t posX,uint16_t posY){
 		LCD_DisplayChar(Line5, y, 'P');
 		y+=15;
 		LCD_DisplayChar(Line5, y, 'H');
-	}
 }
-
 void butpower(uint16_t posX,uint16_t posY){
 	if(posX > 205 && posX < 250 && posY > 28 && posY < 76)
 	{
