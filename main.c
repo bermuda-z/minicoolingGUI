@@ -39,6 +39,16 @@
 #include <string.h>
 #define Mint 0x1FF8
 #define Rose 0xF820
+#define White          0xFFFF
+#define Black          0x0000
+#define Grey           0xF7DE
+#define Blue           0x001F
+#define Blue2          0x051F
+#define Red            0xF800
+#define Magenta        0xF81F
+#define Green          0x07E0
+#define Cyan           0x7FFF
+#define Yellow         0xFFE0
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -62,10 +72,21 @@ static void MX_SPI3_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_USART2_UART_Init(void);
+                                    
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+                                
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
+void Background(void);
+int speed(int slevel);
+int LCD_seTtemp(int temp);
+void SetNum(int temp);
+uint16_t posX, posY;
+int temp;
+int slevel;
 void Menu(void);
+void GraphPlot(void);
 void buttemppress(uint16_t posX,uint16_t posY);
 void buttemprelease(uint16_t posX,uint16_t posY);
 void butspeedpress(uint16_t posX,uint16_t posY);
@@ -102,49 +123,70 @@ int main(void)
   MX_USART2_UART_Init();
 
   /* USER CODE BEGIN 2 */
+	int temp=5;
+	slevel=1;
+	
+	
 	LCD_Setup();
-	uint16_t posX, posY;
 	char pos[50];
 	//Menu();
-		Menu();	
+	Menu();	
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-  /* USER CODE END WHILE */
-	posX = TCS_Read_X();
-	posY = TCS_Read_Y();
-	sprintf(pos, "X = %d Y = %d\r\n", posX, posY); 
+		posX = TCS_Read_X();
+		posY = TCS_Read_Y();
+		sprintf(pos, "X = %d Y = %d\r\n", posX, posY);
+		
+		htim1.Instance -> CCR4 = (10000-1)*temp*0.1;
+		HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_4);
+		HAL_Delay(1000);
+		HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_4);
+		
 	//while(__HAL_UART_GET_FLAG(&huart2,UART_FLAG_TC)==RESET){}
 	//HAL_UART_Transmit(&huart2, (uint8_t*) pos, strlen(pos), 500); 
-	if(posX > 200 && posX < 260 && posY > 186 && posY < 210)
+	/*if(posX > 200 && posX < 260 && posY > 186 && posY < 210)   //Temp
 	{
 		butspeedrelease(posX,posY);
 		butgraphrelease(posX,posY);
 		buttemppress(posX,posY);
-	}
-	if(posX > 193 && posX < 265 && posY > 140 && posY < 162)
+		temp=LCD_seTtemp(temp);
+		
+	}*/
+	if(posX > 193 && posX < 265 && posY > 140 && posY < 162)   //speed
 	{
-		buttemprelease(posX,posY);
+		//buttemprelease(posX,posY);
 		butgraphrelease(posX,posY);
 		butspeedpress(posX,posY);	
+		temp = LCD_seTtemp(temp);
 	}
-	if(posX > 193 && posX < 265 && posY > 98 && posY < 122)
+	if(posX > 193 && posX < 265 && posY > 98 && posY < 122)  //Graph
 	{
-		buttemprelease(posX,posY);
+		//buttemprelease(posX,posY);
 		butspeedrelease(posX,posY);
 		butgraphpress(posX,posY);
+		GraphPlot();
 	}
-	if(posX > 205 && posX < 250 && posY > 28 && posY < 76)
+	if(posX > 205 && posX < 250 && posY > 28 && posY < 76) //out
 	{		
 		butpower(posX,posY);
-	}	
+		LCD_Clear(Black);
+		break;
+	
+  }
+		
+  /* USER CODE END WHILE */
+
   /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
+
 /** System Clock Configuration
 */
 void SystemClock_Config(void)
@@ -230,11 +272,13 @@ static void MX_TIM1_Init(void)
 
   TIM_ClockConfigTypeDef sClockSourceConfig;
   TIM_MasterConfigTypeDef sMasterConfig;
+  TIM_OC_InitTypeDef sConfigOC;
+  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig;
 
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 72-1;
+  htim1.Init.Prescaler = 720-1;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 1000-1;
+  htim1.Init.Period = 10000-1;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
@@ -248,12 +292,42 @@ static void MX_TIM1_Init(void)
     Error_Handler();
   }
 
+  if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
   {
     Error_Handler();
   }
+
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = (10000-1)/2;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
+  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
+  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
+  sBreakDeadTimeConfig.DeadTime = 0;
+  sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+  if (HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDeadTimeConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  HAL_TIM_MspPostInit(&htim1);
 
 }
 
@@ -361,6 +435,258 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void SetNum(int temp)
+{
+	int first,sec;
+	first=temp;
+	// 1bit x>35 & x<80   y>75 & y<135
+	LCD_SetTextColor(Mint);
+	for(int x=0;x<108;x++)
+		LCD_DrawLine(72+x,27,128 , Horizontal);
+	
+	//1 firstbit
+	if (first==1)
+	{
+		LCD_SetTextColor(Black);
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),85+x,80,Vertical);
+	}
+	else if (first==2)
+	{
+		LCD_SetTextColor(Black);
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),85+x,45,Vertical);
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(130-(x/2),45+x,45,Vertical);
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),45+x,40,Horizontal);
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(130-(x/2),45+x,40,Horizontal);
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(175-(x/2),45+x,40,Horizontal);
+	}
+	else if (first==0)
+	{
+		LCD_SetTextColor(Black);
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),85+x,45,Vertical);   //  |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(125-(x/2),45+x,45,Vertical);  //|  
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),45+x,40,Horizontal);  // _
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(170-(x/2),45+x,40,Horizontal);   //  _
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),45+x,45,Vertical); // |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(125-(x/2),85+x,45,Vertical);   //  |
+	}
+	else if (first==3)
+	{
+		
+		LCD_SetTextColor(Black);
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),85+x,45,Vertical);   //  |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),45+x,40,Horizontal);  // _
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(170-(x/2),45+x,40,Horizontal);   //  _
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(125-(x/2),85+x,45,Vertical);   //  |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(130-(x/2),45+x,40,Horizontal);//_
+	}
+	else if (first==8)
+	{
+		LCD_SetTextColor(Black);
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),85+x,45,Vertical);   //  |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(125-(x/2),45+x,45,Vertical);  //|  
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),45+x,40,Horizontal);  // _
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(170-(x/2),45+x,40,Horizontal);   //  _
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),45+x,45,Vertical); // |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(125-(x/2),85+x,45,Vertical);   //  |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(130-(x/2),45+x,40,Horizontal);//_
+	}
+	else if (first==9)
+	{
+		LCD_SetTextColor(Black);
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),85+x,45,Vertical);   //  |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),45+x,40,Horizontal);  // _
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(170-(x/2),45+x,40,Horizontal);   //  _
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),45+x,45,Vertical); // |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(125-(x/2),85+x,45,Vertical);   //  |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(130-(x/2),45+x,40,Horizontal);//_
+	}
+	else if (first==6)
+	{
+		
+		LCD_SetTextColor(Black);
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(125-(x/2),45+x,45,Vertical);  //|  
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),45+x,40,Horizontal);  // _
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(170-(x/2),45+x,40,Horizontal);   //  _
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),45+x,45,Vertical); // |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(130-(x/2),85+x,45,Vertical);   //  |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(130-(x/2),45+x,40,Horizontal);//_
+	}
+	else if (first==5)
+	{
+		
+		LCD_SetTextColor(Black);
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),45+x,40,Horizontal);  // _
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(170-(x/2),45+x,40,Horizontal);   //  _
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),45+x,45,Vertical); // |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(125-(x/2),85+x,45,Vertical);   //  |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(130-(x/2),45+x,40,Horizontal);//_
+	}
+	else if (first==4)
+	{
+		
+		LCD_SetTextColor(Black);
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),85+x,45,Vertical);   //  | 
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(130-(x/2),45+x,40,Horizontal);   //  _
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),45+x,45,Vertical); // |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(125-(x/2),85+x,45,Vertical);   //  |
+	}
+	else if (first==7)
+	{
+		
+		LCD_SetTextColor(Black);
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),85+x,45,Vertical);   //  |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),45+x,40,Horizontal);  // _
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(125-(x/2),85+x,45,Vertical);   //  |
+	}
+	else{
+		//0
+		LCD_SetTextColor(Black);
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),85+x,45,Vertical);   //  |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(125-(x/2),45+x,45,Vertical);  //|  
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),45+x,40,Horizontal);  // _
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(170-(x/2),45+x,40,Horizontal);   //  _
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),45+x,45,Vertical); // |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(125-(x/2),85+x,45,Vertical);   //  |
+		//1
+		LCD_SetTextColor(Black);
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),30+x,80,Vertical);
+	}
+	
+	//2 
+	
+	// 2bit x>85 & x<130   y>75 & y<135
+	//1 secondbit
+
+	
+		LCD_SetTextColor(Black);
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),140+x,45,Vertical);   //  |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(125-(x/2),100+x,45,Vertical);  //|  
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),100+x,40,Horizontal);  // _
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(170-(x/2),100+x,40,Horizontal);   //  _
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(85-(x/2),100+x,45,Vertical); // |
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(125-(x/2),140+x,45,Vertical);   //  |
+	}
+
+int LCD_seTtemp(int temp) // mode 0
+{
+	LCD_SetTextColor(White);
+	for(int x=0;x<10;x++)
+		LCD_DrawRect(70-x, 25-x, 110+(x*2), 130+(x*2)); //yx
+	LCD_SetTextColor(Red);
+	for(int x=0;x<25;x++)
+		LCD_DrawLine(50-x, 45+(x*2),100-(x*4),Horizontal);
+	LCD_SetTextColor(Red);
+	for(int x=0;x<25;x++)
+		LCD_DrawLine(200+x, 45+(x*2),100-(x*4),Horizontal);
+	SetNum(temp);
+	while(1)
+	{
+		posX = TCS_Read_X();
+		posY= TCS_Read_Y();
+		
+		htim1.Instance -> CCR4 = (10000-1)*temp*0.1;
+		HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_4);
+		HAL_Delay(1000);
+		HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_4);
+		
+		if(posX >80 && posX < 120 && posY >=190  && posY <=220 && temp < 10) // press up
+		{
+			temp+=1;
+			SetNum(temp);				
+		}
+		else if(posX > 80 && posX <120 && posY >= 20 && posY <= 50 && temp > 0) // press down
+		{
+			temp-=1;
+			SetNum(temp);
+		}
+		else if(posX > 193 && posX < 265 && posY > 140 && posY < 162)   //speed
+		{
+			break;
+		}
+		else if(posX > 193 && posX < 265 && posY > 98 && posY < 122)  //Graph
+		{
+			break;
+		}
+		else if(posX > 205 && posX < 250 && posY > 28 && posY < 76) //out
+		{		
+		  break;
+		}
+  }
+	LCD_SetBackColor(Mint);
+	LCD_SetTextColor(Mint);
+	LCD_DisplayStringLine(Line0, "           ");
+	LCD_DisplayStringLine(Line1, "           ");
+	LCD_DisplayStringLine(Line2, "           ");
+	LCD_DisplayStringLine(Line3, "           ");
+	LCD_DisplayStringLine(Line4, "           ");
+	LCD_DisplayStringLine(Line5, "           ");
+	LCD_DisplayStringLine(Line6, "           ");
+	LCD_DisplayStringLine(Line7, "           ");
+	LCD_DisplayStringLine(Line8, "           ");
+	LCD_DisplayStringLine(Line9, "           ");
+	return temp;
+}
 void Menu(void){
 	LCD_Clear(Black);
 	LCD_SetBackColor(Mint);
@@ -379,8 +705,8 @@ void Menu(void){
 	LCD_SetTextColor(Grey);
 	for(int i=0;i<5;i++){
 		//shadowtemp
-	LCD_DrawLine(28-i, 276-i, 25, Vertical);
-	LCD_DrawLine(48+i, 210+i, 62, Horizontal);
+	//LCD_DrawLine(28-i, 276-i, 25, Vertical);
+	//LCD_DrawLine(48+i, 210+i, 62, Horizontal);
 		//shadowspeed
 	LCD_DrawLine(76-i, 285-i, 25, Vertical);
 	LCD_DrawLine(96+i, 205+i, 76, Horizontal);
@@ -396,14 +722,14 @@ void Menu(void){
 	LCD_SetBackColor(Mint);
 	LCD_SetTextColor(Black);
 	int y=210;
-	LCD_DisplayChar(Line1, y, 'T');
+	/*LCD_DisplayChar(Line1, y, 'T');
 	y+=15;
 	LCD_DisplayChar(Line1, y, 'E');
 	y+=15;
 	LCD_DisplayChar(Line1, y, 'M');
 	y+=16;
 	LCD_DisplayChar(Line1, y, 'P');
-	
+	*/
 	y=205;
 	LCD_DisplayChar(Line3, y, 'S');
 	y+=15;
@@ -497,11 +823,6 @@ void buttemprelease(uint16_t posX,uint16_t posY){
 			LCD_DisplayChar(Line1, y, 'P');
 	
 }
-
-
-
-
-
 void butspeedpress(uint16_t posX,uint16_t posY){
 		//clear
 		LCD_SetTextColor(Black);
@@ -634,6 +955,24 @@ void butpower(uint16_t posX,uint16_t posY){
 			LCD_DrawLine(165, i, 25, Vertical);		
 		}
 	}
+}
+void GraphPlot(void)
+{
+		LCD_Clear(Mint);
+		
+		LCD_SetTextColor(Black);
+		for(int x=0;x<=180;x++)
+			LCD_DrawLine(20+x,10,300,Horizontal);
+		
+		LCD_SetTextColor(Red);
+		for(int x=0;x<3;x++)
+			LCD_DrawLine(180+x,60,250,Horizontal);
+		for(int x=0;x<3;x++)
+			LCD_DrawLine(50,60+x,130,Vertical);
+		LCD_SetTextColor(White);
+		LCD_DisplayChar(Line1,15,'T');
+		LCD_DisplayChar(Line7,293,'t');
+		
 }
 /* USER CODE END 4 */
 
