@@ -83,17 +83,35 @@ int speed(int slevel);
 int LCD_seTtemp(int temp);
 void SetNum(int temp);
 uint16_t posX, posY;
-int temp;
-int slevel;
+int temp = 5;
+char pos[50];
+float start[247] = {0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,
+									 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,
+									 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,
+									 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,
+									 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,
+	
+									 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,
+									 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,
+									 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,
+									 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,
+									 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,
+								 
+									 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,
+									 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,
+									 0,0,0,0,0,0,0};
 void Menu(void);
 void GraphPlot(void);
-void buttemppress(uint16_t posX,uint16_t posY);
-void buttemprelease(uint16_t posX,uint16_t posY);
+void butteampress(uint16_t posX,uint16_t posY);
+void butteamrelease(uint16_t posX,uint16_t posY);
 void butspeedpress(uint16_t posX,uint16_t posY);
 void butspeedrelease(uint16_t posX,uint16_t posY);
 void butgraphpress(uint16_t posX,uint16_t posY);
 void butgraphrelease(uint16_t posX,uint16_t posY);
 void butpower(uint16_t posX,uint16_t posY);
+void op(void);
+void team(void);
+void clear(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -122,52 +140,46 @@ int main(void)
   MX_TIM2_Init();
   MX_USART2_UART_Init();
 
-  /* USER CODE BEGIN 2 */
-	int temp=5;
-	slevel=1;
-	
-	
+  /* USER CODE BEGIN 2 */	
 	LCD_Setup();
-	char pos[50];
-	//Menu();
-	Menu();	
-
-
+	
   /* USER CODE END 2 */
-
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+	while(1){
+	op();
+	Menu();	
   while (1)
   {
 		posX = TCS_Read_X();
 		posY = TCS_Read_Y();
+		
 		sprintf(pos, "X = %d Y = %d\r\n", posX, posY);
+		while(__HAL_UART_GET_FLAG(&huart2,UART_FLAG_TC)==RESET){}
+		HAL_UART_Transmit(&huart2, (uint8_t*) pos, strlen(pos), 500);
 		
 		htim1.Instance -> CCR4 = (10000-1)*temp*0.1;
 		HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_4);
 		HAL_Delay(1000);
 		HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_4);
 		
-	//while(__HAL_UART_GET_FLAG(&huart2,UART_FLAG_TC)==RESET){}
-	//HAL_UART_Transmit(&huart2, (uint8_t*) pos, strlen(pos), 500); 
-	/*if(posX > 200 && posX < 260 && posY > 186 && posY < 210)   //Temp
+	if(posX > 200 && posX < 260 && posY > 186 && posY < 210)   //Temp
 	{
 		butspeedrelease(posX,posY);
 		butgraphrelease(posX,posY);
-		buttemppress(posX,posY);
-		temp=LCD_seTtemp(temp);
-		
-	}*/
+		butteampress(posX,posY);
+		team();
+	}
 	if(posX > 193 && posX < 265 && posY > 140 && posY < 162)   //speed
 	{
-		//buttemprelease(posX,posY);
+		butteamrelease(posX,posY);
 		butgraphrelease(posX,posY);
 		butspeedpress(posX,posY);	
 		temp = LCD_seTtemp(temp);
 	}
 	if(posX > 193 && posX < 265 && posY > 98 && posY < 122)  //Graph
 	{
-		//buttemprelease(posX,posY);
+		butteamrelease(posX,posY);
 		butspeedrelease(posX,posY);
 		butgraphpress(posX,posY);
 		GraphPlot();
@@ -177,9 +189,8 @@ int main(void)
 		butpower(posX,posY);
 		LCD_Clear(Black);
 		break;
-	
   }
-		
+	}	
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
@@ -435,8 +446,43 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void SetNum(int temp)
-{
+void clear(void){
+	LCD_SetTextColor(Mint);
+	LCD_SetBackColor(Mint);
+	LCD_DisplayStringLine(Line0, "           ");
+	LCD_DisplayStringLine(Line1, "           ");
+	LCD_DisplayStringLine(Line2, "           ");
+	LCD_DisplayStringLine(Line3, "           ");
+	LCD_DisplayStringLine(Line4, "           ");
+	LCD_DisplayStringLine(Line5, "           ");
+	LCD_DisplayStringLine(Line6, "           ");
+	LCD_DisplayStringLine(Line7, "           ");
+	LCD_DisplayStringLine(Line8, "           ");
+	LCD_DisplayStringLine(Line9, "           ");
+}
+void team(void){
+	clear();
+	LCD_SetTextColor(Black);
+	LCD_SetBackColor(Mint);
+	LCD_DisplayStringLine(Line2, "  59010823 ");
+	LCD_DisplayStringLine(Line4, "  59010874 ");
+	LCD_DisplayStringLine(Line6, "  59011189 ");
+	while(1){
+	if(posX > 193 && posX < 265 && posY > 140 && posY < 162)   //speed
+	{
+		break;
+	}
+	if(posX > 193 && posX < 265 && posY > 98 && posY < 122)  //Graph
+	{
+		break;
+	}
+	if(posX > 205 && posX < 250 && posY > 28 && posY < 76) //out
+	{		
+		break;
+  }
+	}
+}
+void SetNum(int temp){
 	int first,sec;
 	first=temp;
 	// 1bit x>35 & x<80   y>75 & y<135
@@ -628,8 +674,8 @@ void SetNum(int temp)
 			LCD_DrawLine(125-(x/2),140+x,45,Vertical);   //  |
 	}
 
-int LCD_seTtemp(int temp) // mode 0
-{
+int LCD_seTtemp(int temp){
+	clear();
 	LCD_SetTextColor(White);
 	for(int x=0;x<10;x++)
 		LCD_DrawRect(70-x, 25-x, 110+(x*2), 130+(x*2)); //yx
@@ -687,17 +733,106 @@ int LCD_seTtemp(int temp) // mode 0
 	LCD_DisplayStringLine(Line9, "           ");
 	return temp;
 }
+void GraphPlot(void){
+		/*LCD_Clear(Mint);
+		
+		LCD_SetTextColor(Black);
+		for(int x=0;x<=180;x++)
+			LCD_DrawLine(20+x,10,300,Horizontal);*/
+	//graph
+		LCD_Clear(Black);
+		LCD_SetTextColor(Red);
+		for(int x=0;x<3;x++)
+		LCD_DrawLine(200+x,30,250,Horizontal);  
+		for(int x=0;x<3;x++)
+		LCD_DrawLine(50,30+x,150,Vertical);
+		LCD_SetTextColor(Mint);
+		LCD_SetBackColor(Black);
+		int y = 10;
+		LCD_DisplayChar(Line1, y, 'T');
+		y+=15;
+		LCD_DisplayChar(Line1, y, 'E');
+		y+=15;
+		LCD_DisplayChar(Line1, y, 'M');
+		y+=16;
+		LCD_DisplayChar(Line1, y, 'P');
+		
+		LCD_DisplayChar(Line8,293,'t');
+		
+		LCD_SetTextColor(Mint);
+		for(int x=0;x<=30;x++)
+			LCD_DrawLine(40-x,260,50,Horizontal);
+			
+		LCD_SetTextColor(Black);
+		for(int x=0;x<=10;x++)
+			LCD_DrawLine(28-x,270,20,Horizontal);
+		for(int x=0;x<12;x++)
+			LCD_DrawLine(12+x,290+x,24-(x*2),Vertical);
+			
+	//54
+		while(1)
+	{
+		posX = TCS_Read_X();
+		posY = TCS_Read_Y();
+		
+		LCD_SetTextColor(Yellow);
+		for(int x=0;x<247;x++){
+			LCD_DrawLine(198+start[x],33+x,1,Horizontal);
+			LCD_DrawLine(199+start[x],33+x,1,Horizontal);
+		}
+		if(posX > 250 && posX < 300 && posY > 190 && posY < 220) //out
+		{		
+			break;
+		} 
+		
+	}	
+	Menu();
+		//x = 64
+}
+
+void op(void){
+	LCD_Clear(Black);
+	// power
+	LCD_SetTextColor(Grey);
+	for(int i=0;i<5;i++){
+	LCD_DrawCircle(141+i, 161+i, 50);	
+	}
+	LCD_SetTextColor(Yellow);
+	LCD_SetBackColor(Black);
+	LCD_DisplayStringLine(Line2, "    Press to Open   ");
+	
+	for(int i=1;i<50;i++){
+	LCD_DrawCircle(140, 160, i);
+	}
+	LCD_SetTextColor(Black);
+	for(int i=30;i<35;i++){
+	LCD_DrawCircle(140, 160, i);
+	}
+	for(int i=159;i<164;i++){		
+		LCD_DrawLine(100, i, 25, Vertical);		
+	}
+	while(1){
+		posX = TCS_Read_X();
+		posY = TCS_Read_Y();
+		/*sprintf(pos, "X = %d Y = %d\r\n", posX, posY);
+		while(__HAL_UART_GET_FLAG(&huart2,UART_FLAG_TC)==RESET){}
+	HAL_UART_Transmit(&huart2, (uint8_t*) pos, strlen(pos), 500);*/
+		if(posX > 110 && posX < 200 && posY > 60 && posY < 150){
+			break;
+		}	
+	}
+}
 void Menu(void){
 	LCD_Clear(Black);
 	LCD_SetBackColor(Mint);
-	LCD_SetTextColor(Mint);
+	LCD_SetTextColor(Black);
 	LCD_DisplayStringLine(Line0, "           ");
 	LCD_DisplayStringLine(Line1, "           ");
-	LCD_DisplayStringLine(Line2, "           ");
+	LCD_DisplayStringLine(Line2, "    Mini   ");
 	LCD_DisplayStringLine(Line3, "           ");
-	LCD_DisplayStringLine(Line4, "           ");
+	LCD_DisplayStringLine(Line4, "    Air    ");
 	LCD_DisplayStringLine(Line5, "           ");
-	LCD_DisplayStringLine(Line6, "           ");
+	LCD_DisplayStringLine(Line6, "Conditioner");
 	LCD_DisplayStringLine(Line7, "           ");
 	LCD_DisplayStringLine(Line8, "           ");
 	LCD_DisplayStringLine(Line9, "           ");
@@ -705,8 +840,8 @@ void Menu(void){
 	LCD_SetTextColor(Grey);
 	for(int i=0;i<5;i++){
 		//shadowtemp
-	//LCD_DrawLine(28-i, 276-i, 25, Vertical);
-	//LCD_DrawLine(48+i, 210+i, 62, Horizontal);
+	LCD_DrawLine(28-i, 276-i, 25, Vertical);
+	LCD_DrawLine(48+i, 210+i, 62, Horizontal);
 		//shadowspeed
 	LCD_DrawLine(76-i, 285-i, 25, Vertical);
 	LCD_DrawLine(96+i, 205+i, 76, Horizontal);
@@ -722,14 +857,15 @@ void Menu(void){
 	LCD_SetBackColor(Mint);
 	LCD_SetTextColor(Black);
 	int y=210;
-	/*LCD_DisplayChar(Line1, y, 'T');
+	LCD_DisplayChar(Line1, y, 'T');
 	y+=15;
 	LCD_DisplayChar(Line1, y, 'E');
 	y+=15;
-	LCD_DisplayChar(Line1, y, 'M');
+	LCD_DisplayChar(Line1, y, 'A');
 	y+=16;
-	LCD_DisplayChar(Line1, y, 'P');
-	*/
+	LCD_DisplayChar(Line1, y, 'M');
+	
+	
 	y=205;
 	LCD_DisplayChar(Line3, y, 'S');
 	y+=15;
@@ -752,6 +888,7 @@ void Menu(void){
 	y+=15;
 	LCD_DisplayChar(Line5, y, 'H');
 	
+	// power
 	LCD_SetTextColor(Rose);
 	for(int i=1;i<30;i++){
 	LCD_DrawCircle(190, 240, i);
@@ -764,9 +901,7 @@ void Menu(void){
 		LCD_DrawLine(165, i, 25, Vertical);		
 	}
 }
-
-
-void buttemppress(uint16_t posX,uint16_t posY){
+void butteampress(uint16_t posX,uint16_t posY){
 
 		//clear
 		LCD_SetTextColor(Black);
@@ -790,14 +925,12 @@ void buttemppress(uint16_t posX,uint16_t posY){
 		y+=15;
 		LCD_DisplayChar(Line1, y, 'E');
 		y+=15;
-		LCD_DisplayChar(Line1, y, 'M');
+		LCD_DisplayChar(Line1, y, 'A');
 		y+=16;
-		LCD_DisplayChar(Line1, y, 'P');
-			
-
+		LCD_DisplayChar(Line1, y, 'M');
 }
 
-void buttemprelease(uint16_t posX,uint16_t posY){
+void butteamrelease(uint16_t posX,uint16_t posY){
 	
 			LCD_SetTextColor(Black);
 			for(int i=0;i<5;i++){
@@ -818,9 +951,9 @@ void buttemprelease(uint16_t posX,uint16_t posY){
 			y+=15;
 			LCD_DisplayChar(Line1, y, 'E');
 			y+=15;
-			LCD_DisplayChar(Line1, y, 'M');
+			LCD_DisplayChar(Line1, y, 'A');
 			y+=16;
-			LCD_DisplayChar(Line1, y, 'P');
+			LCD_DisplayChar(Line1, y, 'M');
 	
 }
 void butspeedpress(uint16_t posX,uint16_t posY){
@@ -940,9 +1073,6 @@ void butgraphrelease(uint16_t posX,uint16_t posY){
 		LCD_DisplayChar(Line5, y, 'H');
 }
 void butpower(uint16_t posX,uint16_t posY){
-	if(posX > 205 && posX < 250 && posY > 28 && posY < 76)
-	{
-		
 		LCD_SetTextColor(Black);
 		for(int i=1;i<30;i++){
 			LCD_DrawCircle(190, 240, i);
@@ -954,26 +1084,9 @@ void butpower(uint16_t posX,uint16_t posY){
 		for(int i=238;i<243;i++){		
 			LCD_DrawLine(165, i, 25, Vertical);		
 		}
-	}
 }
-void GraphPlot(void)
-{
-		LCD_Clear(Mint);
-		
-		LCD_SetTextColor(Black);
-		for(int x=0;x<=180;x++)
-			LCD_DrawLine(20+x,10,300,Horizontal);
-		
-		LCD_SetTextColor(Red);
-		for(int x=0;x<3;x++)
-			LCD_DrawLine(180+x,60,250,Horizontal);
-		for(int x=0;x<3;x++)
-			LCD_DrawLine(50,60+x,130,Vertical);
-		LCD_SetTextColor(White);
-		LCD_DisplayChar(Line1,15,'T');
-		LCD_DisplayChar(Line7,293,'t');
-		
-}
+
+
 /* USER CODE END 4 */
 
 /**
@@ -981,8 +1094,7 @@ void GraphPlot(void)
   * @param  None
   * @retval None
   */
-void Error_Handler(void)
-{
+void Error_Handler(void){
   /* USER CODE BEGIN Error_Handler */
   /* User can add his own implementation to report the HAL error return state */
   while(1) 
